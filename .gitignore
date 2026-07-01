@@ -1,0 +1,14 @@
+.env
+*.pyc
+__pycache__/
+build/
+install/
+log/
+.ros/
+*.bag
+*.db3
+*.sqlite3
+.DS_Store
+.vscode/
+*:Zone.Identifier
+*.bak

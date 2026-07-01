@@ -1,0 +1,73 @@
+{
+  "configById": {
+    "3D!nd1main": {
+      "followMode": "follow-pose",
+      "followTf": "base_link",
+      "scene": { "transforms": { "showLabel": true }, "enableStats": false },
+      "transforms": {},
+      "topics": {
+        "/map": { "visible": true, "frameLocked": true, "colorMode": "map" },
+        "/scan": { "visible": true, "colorField": "intensity", "pointSize": 3 },
+        "/plan": { "visible": true, "lineWidth": 0.08, "gradient": ["#00ff88ff", "#00ff88ff"] },
+        "/local_plan": { "visible": true, "lineWidth": 0.05 },
+        "/global_costmap/costmap": { "visible": false },
+        "/local_costmap/costmap": { "visible": false }
+      },
+      "layers": {
+        "grid": { "layerId": "foxglove.Grid", "visible": true, "size": 20, "divisions": 20 }
+      },
+      "cameraState": {
+        "distance": 12,
+        "perspective": false,
+        "phi": 0,
+        "thetaOffset": 0,
+        "target": [0, 0, 0],
+        "targetOffset": [0, 0, 0],
+        "targetOrientation": [0, 0, 0, 1],
+        "fovy": 45,
+        "near": 0.01,
+        "far": 5000
+      }
+    },
+    "Image!nd1cam": {
+      "imageTopic": "/oakd/rgb/preview/image_raw",
+      "calibrationTopic": "/oakd/rgb/preview/camera_info",
+      "cameraTopic": "/oakd/rgb/preview/image_raw",
+      "transformMarkers": false,
+      "synchronize": false
+    },
+    "RawMessages!nd1status": {
+      "topicPath": "/robot_status.data",
+      "fontSize": 14
+    },
+    "Plot!nd1vel": {
+      "title": "cmd_vel (로봇 실제 이동 확인)",
+      "paths": [
+        { "value": "/cmd_vel.linear.x", "enabled": true, "timestampMethod": "receiveTime", "label": "linear.x" },
+        { "value": "/cmd_vel.angular.z", "enabled": true, "timestampMethod": "receiveTime", "label": "angular.z" }
+      ],
+      "showLegend": true,
+      "xAxisVal": "timestamp",
+      "followingViewWidth": 30
+    }
+  },
+  "globalVariables": {},
+  "userNodes": {},
+  "playbackConfig": { "speed": 1 },
+  "layout": {
+    "direction": "row",
+    "first": "3D!nd1main",
+    "second": {
+      "direction": "column",
+      "first": "Image!nd1cam",
+      "second": {
+        "direction": "column",
+        "first": "RawMessages!nd1status",
+        "second": "Plot!nd1vel",
+        "splitPercentage": 50
+      },
+      "splitPercentage": 42
+    },
+    "splitPercentage": 62
+  }
+}

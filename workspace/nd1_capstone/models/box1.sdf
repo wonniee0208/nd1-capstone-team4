@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!-- ND1 캡스톤 — 파지 대상 박스 (Gazebo Fortress / SDF 1.8) -->
+<!-- ros_gz_sim create -file 또는 ign service create(sdf_filename) 로 스폰 -->
+<sdf version="1.8">
+  <model name="box1">
+    <pose>0 0 0.1 0 0 0</pose>
+    <link name="link">
+      <inertial>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>0.00333</ixx><iyy>0.00333</iyy><izz>0.00333</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <collision name="collision">
+        <geometry><box><size>0.2 0.2 0.2</size></box></geometry>
+      </collision>
+      <visual name="visual">
+        <geometry><box><size>0.2 0.2 0.2</size></box></geometry>
+        <material>
+          <ambient>0.78 0.35 0.09 1</ambient>
+          <diffuse>0.78 0.35 0.09 1</diffuse>  <!-- 표준 오렌지 C85A17 -->
+          <specular>0.1 0.1 0.1 1</specular>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>

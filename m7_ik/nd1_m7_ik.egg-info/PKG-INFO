@@ -1,0 +1,15 @@
+Metadata-Version: 2.1
+Name: nd1-m7-ik
+Version: 1.1.0
+Summary: ND1 M7 모듈 — 3-DOF 평면 로봇 FK/IK/Jacobian/Manipulability 패키지
+Home-page: UNKNOWN
+Author: ND1 피지컬 AI 전문가 과정
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Scientific/Engineering
+Classifier: Intended Audience :: Education
+Requires-Python: >=3.8
+
+UNKNOWN
+

@@ -1,0 +1,47 @@
+# ════════════════════════════════════════════════════════════════
+#  ND1 캡스톤 — 기본(baseline) compose
+#  기준: Windows + Docker Desktop(WSL2 백엔드) 다수 학생 → 소프트웨어 렌더 고정
+#  실행:  docker compose up --build      (※ WSL2 우분투 터미널 권장)
+#  접속:  noVNC  http://localhost:8080   /  Foxglove  ws://localhost:8765
+# ════════════════════════════════════════════════════════════════
+services:
+  capstone_env:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nd1capstone/ros2-gazebo-vnc:humble-1.2
+    container_name: nd1_capstone_dev
+    ports:
+      - "8080:80"     # noVNC 웹 데스크탑
+      - "8765:8765"   # Foxglove Studio
+    volumes:
+      - ./workspace:/home/ubuntu/ros2_ws/src   # 학생 ROS2 패키지 (colcon build 대상)
+      - ./foxglove:/home/ubuntu/foxglove
+      - nd1_build_cache:/home/ubuntu/ros2_ws/build
+    environment:
+      - DISPLAY=:1
+      - RESOLUTION=1920x1080
+      - VNC_PW=nd1capstone
+      # ── ★ 안정 기동: 소프트웨어 렌더 (WSL2 OpenGL 한계 회피) ──
+      - LIBGL_ALWAYS_SOFTWARE=1
+      - GALLIUM_DRIVER=llvmpipe
+      - QT_X11_NO_MITSHM=1
+      # ── Node A(LLM) — .env 에서 주입 ──
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - GROQ_MODEL=${GROQ_MODEL:-openai/gpt-oss-20b}
+      # ── ROS2 ──
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-42}
+      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+    security_opt:
+      - seccomp:unconfined
+    shm_size: '2gb'        # Gazebo + Nav2 + VNC 동시 구동 시 SHM 부족 방지
+    tty: true
+    stdin_open: true
+
+volumes:
+  nd1_build_cache:
+
+# ── (참고) 네이티브 Linux + NVIDIA 학생용 가속 override 예시 ────────
+#  docker-compose.gpu.yml 로 분리해 두고:
+#    docker compose -f docker-compose.yml -f docker-compose.gpu.yml up
+#  override 안에서 LIBGL_ALWAYS_SOFTWARE 제거 + deploy.devices(nvidia) 추가.

@@ -82,3 +82,39 @@ ros2 launch nd1_capstone bringup.launch.py sim_mode:=false slam:=true nav2:=true
 
 > ⚠️ ROS2 통신부(rclpy·nav2_msgs)·Gazebo 텔레포트는 컨테이너에서만 실행/검증 가능.
 > 위 수치·로직 검증은 통신·시뮬 외 핵심 알고리즘에 한정됨.
+
+## 8. Node C 구현 기록
+
+### 담당 파일
+
+`workspace/nd1_capstone/nd1_capstone/node_c_grasp.py`
+
+### 구현 내용
+
+Node C는 Coordinator로부터 `/grasp_request`를 수신하여 파지 또는 배치 동작을 처리하고, 처리 결과를 `/grasp_result`로 반환하는 노드이다.
+
+이번 구현에서는 다음 기능을 완료하였다.
+
+1. `_solve_ik()` 구현
+   - `nd1_m7_ik`의 `numerical_ik()` 호출
+   - 팔 로컬 목표 좌표 `(x, y)`에 대한 3DOF 관절각 계산
+   - IK 계산 실패 또는 예외 발생 시 안전하게 실패 처리
+   - `sim_mode=True`에서는 fallback 관절각을 반환하도록 처리
+
+2. `_teleport()` 구현
+   - `sim_mode=True`에서는 Gazebo 호출 없이 성공 로그 처리
+   - `sim_mode=False`에서는 `ign service` 기반 박스 제거 및 생성 명령 구성
+   - `grasp` 요청 시 `/world/<world>/remove` 호출
+   - `place` 요청 시 `/world/<world>/create` 호출
+   - timeout, `ign` 명령 없음, 기타 예외 상황 처리
+
+3. 특이점 회피 처리 유지
+   - `Y_OFFSET_MIN = 0.20`
+   - y-offset이 너무 작을 경우 IK 발산 가능성을 줄이기 위해 최소 offset을 보장한다.
+
+### 검증 결과
+
+문법 검사 통과:
+
+```bash
+python3 -m py_compile src/nd1_capstone/nd1_capstone/node_c_grasp.py

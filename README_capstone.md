@@ -101,7 +101,126 @@ ros2 launch nd1_capstone bringup.launch.py sim_mode:=true
 
 ---
 
-## 4. ★ 스모크 테스트 (sim_mode — B/C/Gazebo 불필요)
+## 4. ★ 스모크 테스트 및 프롬프트 배열 예시 (sim_mode — B/C/Gazebo 불필요)
+
+### 4.1 중 난이도 프롬프트 배열 예시
+
+본 프로젝트의 중 난이도 목표는 하나의 자연어 명령을 두 개 이상의 순차 목표로 분해하여 수행하는 것이다.  
+대표 시연 명령은 “A구역 박스를 B구역으로 옮겨줘”이며, 내부적으로는 다음 순서로 실행된다.
+
+```text
+목표 1: A구역 / Shelf_1 이동
+→ 작업 1: electronic_parts_box 파지
+→ 목표 2: B구역 / Workbench 이동
+→ 작업 2: electronic_parts_box 배치
+→ DONE
+```
+
+아래는 Node A가 처리할 수 있는 프롬프트 배열 예시이다.
+
+```json
+[
+  {
+    "prompt": "A구역 박스를 B구역으로 옮겨줘",
+    "parsed_mission": {
+      "task": "pick_and_deliver",
+      "item": "parts_box",
+      "source": "Shelf_1",
+      "target": "Workbench"
+    },
+    "project_interpretation": {
+      "item": "electronic_parts_box",
+      "fragile": true,
+      "source_zone": "A구역",
+      "target_zone": "B구역",
+      "mode": "충격 최소화 저속 파지 모드"
+    },
+    "sequence": [
+      "NAV_TO_SHELF: Shelf_1",
+      "PICKING: electronic_parts_box",
+      "NAV_TO_WORKER: Workbench",
+      "PLACING: electronic_parts_box",
+      "DONE"
+    ]
+  },
+  {
+    "prompt": "1번 선반에 있는 전자부품 상자를 작업대로 가져다줘",
+    "parsed_mission": {
+      "task": "pick_and_deliver",
+      "item": "parts_box",
+      "source": "Shelf_1",
+      "target": "Workbench"
+    },
+    "project_interpretation": {
+      "item": "electronic_parts_box",
+      "fragile": true,
+      "source_zone": "A구역",
+      "target_zone": "B구역",
+      "mode": "충격 최소화 저속 파지 모드"
+    },
+    "sequence": [
+      "Shelf_1 이동",
+      "전자부품 상자 저속 파지",
+      "Workbench 이동",
+      "전자부품 상자 저속 배치",
+      "DONE"
+    ]
+  },
+  {
+    "prompt": "1번 선반의 일반 공구 상자를 작업대로 옮겨줘",
+    "parsed_mission": {
+      "task": "pick_and_deliver",
+      "item": "tool_box",
+      "source": "Shelf_1",
+      "target": "Workbench"
+    },
+    "project_interpretation": {
+      "item": "tool_box",
+      "fragile": false,
+      "source_zone": "A구역",
+      "target_zone": "B구역",
+      "mode": "일반 파지 모드"
+    },
+    "sequence": [
+      "Shelf_1 이동",
+      "tool_box 일반 파지",
+      "Workbench 이동",
+      "tool_box 일반 배치",
+      "DONE"
+    ]
+  },
+  {
+    "prompt": "센서 박스를 작업자에게 가져다줘",
+    "parsed_mission": {
+      "task": "pick_and_deliver",
+      "item": "sensor_box",
+      "source": "Shelf_2",
+      "target": "Worker"
+    },
+    "project_interpretation": {
+      "item": "sensor_box",
+      "fragile": false,
+      "mode": "일반 파지 모드"
+    },
+    "sequence": [
+      "Shelf_2 이동",
+      "sensor_box 일반 파지",
+      "Worker 이동",
+      "sensor_box 일반 배치",
+      "DONE"
+    ]
+  }
+]
+```
+
+`parts_box`는 통합 테스트 과정에서 사용하는 공통 item 이름이며, 본 프로젝트 시나리오에서는 `electronic_parts_box`로 해석한다.  
+Node C는 `parts_box`를 수신하면 충격에 민감한 전자부품 상자로 처리하고, `fragile=true` 조건에 따라 충격 최소화 저속 파지 모드 로그를 출력한다.  
+반면 `tool_box`, `sensor_box`는 일반 물품으로 간주하여 `fragile=false` 일반 파지 모드로 처리한다.
+
+본 README 기준 대표 검증 시나리오는 A구역에서 B구역으로 전자부품 상자를 운반하는 정방향 흐름이다.  
+B구역에서 A구역으로의 역방향 운반은 source와 target을 공통 위치 집합으로 확장하면 동일한 FSM 구조에서 처리할 수 있는 확장 시나리오로 둔다.
+
+### 4.2 스모크 테스트 실행
 
 ```bash
 # 위 launch 실행 상태에서, 새 터미널:
@@ -110,7 +229,7 @@ source /opt/ros/humble/setup.bash
 cd /home/ubuntu/ros2_ws
 source install/setup.bash
 
-ros2 topic pub --once /llm_command std_msgs/msg/String "{data: '1번 선반에 있는 부품 박스를 작업자에게 가져다줘'}"
+ros2 topic pub --once /llm_command std_msgs/msg/String "{data: 'A구역 박스를 B구역으로 옮겨줘'}"
 ```
 
 정상 동작 시 아래 흐름이 출력되면 통과이다.
@@ -123,7 +242,7 @@ NAV_TO_SHELF → PICKING → NAV_TO_WORKER → PLACING → DONE
 
 ```text
 [node_a_llm] 명령 수신
-[node_a_llm] 미션 발행: {"task": "pick_and_deliver", "item": "parts_box", "source": "Shelf_1", "target": "Worker"}
+[node_a_llm] 미션 발행: {"task": "pick_and_deliver", "item": "parts_box", "source": "Shelf_1", "target": "Workbench"}
 
 [coordinator_fsm] mission received
 [coordinator_fsm] NAV_TO_SHELF
@@ -134,19 +253,38 @@ NAV_TO_SHELF → PICKING → NAV_TO_WORKER → PLACING → DONE
 [coordinator_fsm] PICKING
 
 [node_c_grasp] 파지 요청 수신: op=grasp, item=parts_box
+[node_c_grasp] grasp 대상=electronic_parts_box, fragile=True → 충격 최소화 저속 파지 모드
 [node_c_grasp] 파지 결과: 성공
 
 [coordinator_fsm] NAV_TO_WORKER
 
-[node_b_nav] 이동 요청 수신: target=Worker
+[node_b_nav] 이동 요청 수신: target=Workbench
 [node_b_nav] 이동 결과: 성공
 
 [coordinator_fsm] PLACING
 
 [node_c_grasp] 파지 요청 수신: op=place, item=parts_box
+[node_c_grasp] place 대상=electronic_parts_box, fragile=True → 충격 최소화 저속 파지 모드
 [node_c_grasp] 파지 결과: 성공
 
 [coordinator_fsm] DONE
+SMOKE TEST: PASS
+```
+
+자동 스모크 테스트를 실행하는 경우 다음 명령을 사용한다.
+
+```bash
+cd /home/ubuntu/ros2_ws
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+python3 ./nd1_capstone/scripts/smoke_test.py
+```
+
+자동 스모크 테스트에서 다음 문구가 출력되면 중 난이도 순차명령 검증이 완료된 것으로 본다.
+
+```text
+[FSM:DONE] DONE
+SMOKE TEST: PASS
 ```
 
 ---

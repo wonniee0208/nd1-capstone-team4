@@ -586,3 +586,53 @@ API Key, 비밀번호, 토큰은 커밋하지 않는다.
 담당 파일 외 수정이 필요하면 팀원에게 먼저 공유한다.
 토픽 이름과 JSON 키 이름은 임의로 바꾸지 않는다.
 ```
+
+## 창고 구역 정의 및 좌표표
+
+본 프로젝트는 “충격에 민감한 전자부품 상자를 안전하게 운반하는 물류 로봇”을 목표로 한다.  
+복잡한 창고 맵을 새로 제작하기보다, 전자부품 물류창고를 A구역, B구역, Dock 구역으로 단순화하여 시연한다.
+
+| 구역 | 의미 | 내부 이름 | 좌표 예시 | 역할 |
+|---|---|---|---|---|
+| A구역 | 전자부품 상자 보관 구역 | `Shelf_1` | `(1.5, 0.5)` | 픽업 위치 |
+| B구역 | 작업자 전달 구역 | `Workbench` | `(2.5, -1.0)` | 배송/배치 위치 |
+| Dock | 로봇 대기 위치 | `Dock` | `(0.0, 0.0)` | 시작/복귀 위치 |
+| Safe Zone | 저속 운반 구간 | A구역 → B구역 | 경로 구간 | fragile=true 저속 이동 설명 |
+
+Node A는 작업자의 자연어 명령인  
+`A구역에 있는 전자부품 상자를 B구역으로 옮겨줘`를 아래와 같은 내부 미션으로 변환한다.
+
+```json
+{
+  "task": "pick_and_deliver",
+  "item": "parts_box",
+  "source": "Shelf_1",
+  "target": "Workbench"
+}
+```
+
+여기서 `parts_box`는 본 프로젝트 시나리오의 `electronic_parts_box`에 해당한다.  
+Node C는 `parts_box`를 전자부품 상자로 해석하고, fragile 속성을 기준으로 저속 파지 및 안전 배치 흐름을 수행한다.
+
+전체 흐름은 다음과 같다.
+
+```text
+/llm_command
+→ Node A
+→ /mission
+→ Coordinator FSM
+→ /nav_request
+→ Node B
+→ /nav_result
+→ /grasp_request
+→ Node C
+→ /grasp_result
+→ /robot_status
+```
+
+상태 흐름은 아래 순서를 기준으로 확인한다.
+
+```text
+PLANNING → NAV_TO_SHELF → PICKING → NAV_TO_WORKER → PLACING → DONE
+```
+

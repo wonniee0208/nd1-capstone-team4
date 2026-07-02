@@ -1,4 +1,3 @@
-cat > workspace/nd1_capstone/nd1_capstone/node_c_grasp.py <<'PY'
 #!/usr/bin/env python3
 # ════════════════════════════════════════════════════════════════
 #  Node C — 파지/배치 노드 (IK) [학생 구현]
@@ -260,4 +259,3 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
-PY
